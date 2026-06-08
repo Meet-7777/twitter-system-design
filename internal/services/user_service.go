@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"twitter-system-design/internal/models"
 	"twitter-system-design/internal/repositories"
 )
@@ -16,7 +17,7 @@ func NewUserService(repo *repositories.UserRepository) *UserService {
 func (s *UserService) CreateUser(user *models.User) error {
 
 	if user.Username == "" {
-		return nil
+		return errors.New("username required")
 	}
 
 	return s.Repo.CreateUser(user)

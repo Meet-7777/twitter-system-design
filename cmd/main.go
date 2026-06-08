@@ -13,12 +13,33 @@ import (
 func main() {
 	db := database.NewPostgres()
 
+	// Repositories
 	userRepo := repositories.NewUserRepository(db)
-	userService := services.NewUserService(userRepo)
-	userHandler := handlers.NewUserHandler(userService)
+	followRepo := repositories.NewFollowRepository(db)
+	tweetRepo := repositories.NewTweetRepositrory(db)
 
+	// Services
+	userService := services.NewUserService(userRepo)
+	followService := services.NewFollowService(followRepo)
+	tweetService := services.NewTweetService(tweetRepo)
+
+	// Handlers
+	userHandler := handlers.NewUserHandler(userService)
+	followHandler := handlers.NewFollowHandler(followService)
+	tweetHandler := handlers.NewTweetHandler(tweetService)
+
+	// Routes
 	http.HandleFunc("/users", userHandler.CreateUser)
 
-	fmt.Println("Server running on :8080")
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/follow", followHandler.FollowUser)
+	http.HandleFunc("/following", followHandler.GetFollowing)
+
+	http.HandleFunc("/tweets", tweetHandler.CreateTweet)
+	http.HandleFunc("/user-tweets", tweetHandler.GetTweetsByUserID)
+
+	fmt.Println("🚀 Server running on :8080")
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		fmt.Println(err)
+	}
 }
