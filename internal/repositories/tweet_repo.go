@@ -1,12 +1,15 @@
 package repositories
 
-import "database/sql"
+import (
+	"database/sql"
+	"twitter-system-design/internal/models"
+)
 
 type TweetRepository struct {
 	DB *sql.DB
 }
 
-func NewTweetRepositrory(db *sql.DB) *TweetRepository {
+func NewTweetRepository(db *sql.DB) *TweetRepository {
 	return &TweetRepository{DB: db}
 }
 
@@ -18,9 +21,9 @@ func (r *TweetRepository) CreateTweet(userID int, content string) error {
 	return err
 }
 
-func (r *TweetRepository) GetTweetsByUserID(userID int) ([]string, error) {
+func (r *TweetRepository) GetTweetsByUserID(userID int) ([]models.Tweet, error) {
 	rows, err := r.DB.Query(
-		"SELECT content FROM tweets WHERE user_id = $1",
+		"SELECT id, user_id, content, created_at FROM tweets WHERE user_id = $1 ORDER BY created_at DESC",
 		userID,
 	)
 	if err != nil {
@@ -28,13 +31,17 @@ func (r *TweetRepository) GetTweetsByUserID(userID int) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var tweets []string
+	var tweets []models.Tweet
 	for rows.Next() {
-		var content string
-		if err := rows.Scan(&content); err != nil {
+		var tweet models.Tweet
+		if err := rows.Scan(&tweet.ID, &tweet.UserID, &tweet.Content, &tweet.CreatedAt); err != nil {
 			return nil, err
 		}
-		tweets = append(tweets, content)
+		tweets = append(tweets, tweet)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return tweets, nil
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"twitter-system-design/internal/database"
@@ -11,35 +11,48 @@ import (
 )
 
 func main() {
+	redisClient := database.NewRedis()
 	db := database.NewPostgres()
+	defer redisClient.Close()
+	defer db.Close()
 
 	// Repositories
 	userRepo := repositories.NewUserRepository(db)
 	followRepo := repositories.NewFollowRepository(db)
-	tweetRepo := repositories.NewTweetRepositrory(db)
+	tweetRepo := repositories.NewTweetRepository(db)
+	timelineRepo := repositories.NewTimelineRepository(db)
 
 	// Services
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
 	tweetService := services.NewTweetService(tweetRepo)
+	timelineService := services.NewTimelineService(timelineRepo, redisClient)
 
 	// Handlers
 	userHandler := handlers.NewUserHandler(userService)
 	followHandler := handlers.NewFollowHandler(followService)
 	tweetHandler := handlers.NewTweetHandler(tweetService)
+	timelineHandler := handlers.NewTimelineHandler(timelineService)
 
-	// Routes
+	// User routes
 	http.HandleFunc("/users", userHandler.CreateUser)
 
+	// Follow routes
 	http.HandleFunc("/follow", followHandler.FollowUser)
 	http.HandleFunc("/following", followHandler.GetFollowing)
 
-	http.HandleFunc("/tweets", tweetHandler.CreateTweet)
-	http.HandleFunc("/user-tweets", tweetHandler.GetTweetsByUserID)
+	// Tweet routes
+	http.HandleFunc("/tweets", tweetHandler.Tweets)
 
-	fmt.Println("🚀 Server running on :8080")
+	// Timeline route
+	http.HandleFunc("/timeline", timelineHandler.GetTimeline)
+
+	log.Println("🚀 Server running on :8080")
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Println(err)
+		log.Fatalf(
+			"Could not start server: %v",
+			err,
+		)
 	}
 }
