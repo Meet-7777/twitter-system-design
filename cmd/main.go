@@ -25,7 +25,7 @@ func main() {
 	// Services
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
-	tweetService := services.NewTweetService(tweetRepo)
+	tweetService := services.NewTweetService(tweetRepo, followRepo, redisClient)
 	timelineService := services.NewTimelineService(timelineRepo, redisClient)
 
 	// Handlers

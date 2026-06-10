@@ -43,14 +43,21 @@ func (h *TweetHandler) createTweet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.services.CreateTweet(&tweet); err != nil {
-		w.WriteHeader(http.StatusBadRequest) // Assuming validation error
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+	tweetID, err := h.services.CreateTweet(&tweet)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+
+		json.NewEncoder(w).Encode(
+			map[string]string{
+				"error": err.Error(),
+			},
+		)
+
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Tweet created successfully"})
+	json.NewEncoder(w).Encode(map[string]any{"message": "Tweet created successfully", "tweetID": tweetID})
 }
 
 func (h *TweetHandler) getTweets(w http.ResponseWriter, r *http.Request) {
