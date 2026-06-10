@@ -86,3 +86,26 @@ func (r *FollowRepository) GetFollowing(
 
 	return users, nil
 }
+
+func (r *FollowRepository) GetFollowers(userID int) ([]int, error) {
+	rows, err := r.DB.Query(
+		`
+   SELECT follower_id
+   FROM follows
+   WHERE followee_id = $1
+   `, userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var followers []int
+	for rows.Next() {
+		var followerID int
+		if err := rows.Scan(&followerID); err != nil {
+			return nil, err
+		}
+		followers = append(followers, followerID)
+	}
+	return followers, nil
+}

@@ -13,12 +13,22 @@ func NewTweetRepository(db *sql.DB) *TweetRepository {
 	return &TweetRepository{DB: db}
 }
 
-func (r *TweetRepository) CreateTweet(userID int, content string) error {
-	_, err := r.DB.Exec(
-		"INSERT INTO tweets(user_id, content) VALUES($1, $2)",
-		userID, content,
-	)
-	return err
+func (r *TweetRepository) CreateTweet(userID int, content string) (int, error) {
+	var tweetID int
+	err := r.DB.QueryRow(
+		`
+				INSERT INTO tweets(user_id, content)
+				VALUES($1, $2)
+				RETURNING id
+				`,
+		userID,
+		content,
+	).Scan(&tweetID)
+	if err != nil {
+		return 0, err
+	}
+	return tweetID, nil
+
 }
 
 func (r *TweetRepository) GetTweetsByUserID(userID int) ([]models.Tweet, error) {

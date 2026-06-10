@@ -67,3 +67,11 @@ func (s *FollowService) GetFollowing(
 
 	return s.Repo.GetFollowing(id)
 }
+
+func (s *FollowService) GetFollowers(userID int) ([]int, error) {
+
+	if userID <= 0 {
+		return nil, errors.New("user id invalid")
+	}
+	return s.Repo.GetFollowers(userID)
+}

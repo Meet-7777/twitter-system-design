@@ -22,18 +22,18 @@ func NewTweetService(
 
 func (s *TweetService) CreateTweet(
 	tweet *models.Tweet,
-) error {
+) (int, error) {
 
 	if tweet.UserID <= 0 {
-		return errors.New("invalid user id")
+		return 0, errors.New("invalid user id")
 	}
 
 	if strings.TrimSpace(tweet.Content) == "" {
-		return errors.New("tweet cannot be empty")
+		return 0, errors.New("tweet cannot be empty")
 	}
 
 	if len(tweet.Content) > 280 {
-		return errors.New("tweet exceeds 280 characters")
+		return 0, errors.New("tweet exceeds 280 characters")
 	}
 
 	return s.Repo.CreateTweet(

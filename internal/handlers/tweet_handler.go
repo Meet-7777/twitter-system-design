@@ -43,7 +43,7 @@ func (h *TweetHandler) createTweet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.services.CreateTweet(&tweet); err != nil {
+	if _, err := h.services.CreateTweet(&tweet); err != nil {
 		w.WriteHeader(http.StatusBadRequest) // Assuming validation error
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
