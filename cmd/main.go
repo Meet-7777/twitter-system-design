@@ -11,48 +11,82 @@ import (
 )
 
 func main() {
+
 	redisClient := database.NewRedis()
 	db := database.NewPostgres()
+
 	defer redisClient.Close()
 	defer db.Close()
 
-	// Repositories
+	// repositories
+
 	userRepo := repositories.NewUserRepository(db)
+
 	followRepo := repositories.NewFollowRepository(db)
+
 	tweetRepo := repositories.NewTweetRepository(db)
+
 	timelineRepo := repositories.NewTimelineRepository(db)
 
-	// Services
+	// services
+
 	userService := services.NewUserService(userRepo)
+
 	followService := services.NewFollowService(followRepo)
-	tweetService := services.NewTweetService(tweetRepo, followRepo, redisClient)
-	timelineService := services.NewTimelineService(timelineRepo, redisClient)
 
-	// Handlers
-	userHandler := handlers.NewUserHandler(userService)
-	followHandler := handlers.NewFollowHandler(followService)
-	tweetHandler := handlers.NewTweetHandler(tweetService)
-	timelineHandler := handlers.NewTimelineHandler(timelineService)
+	tweetService := services.NewTweetService(tweetRepo)
 
-	// User routes
-	http.HandleFunc("/users", userHandler.CreateUser)
+	timelineService := services.NewTimelineService(
+		timelineRepo,
+	)
 
-	// Follow routes
-	http.HandleFunc("/follow", followHandler.FollowUser)
-	http.HandleFunc("/following", followHandler.GetFollowing)
+	// handlers
 
-	// Tweet routes
-	http.HandleFunc("/tweets", tweetHandler.Tweets)
+	userHandler := handlers.NewUserHandler(
+		userService,
+	)
 
-	// Timeline route
-	http.HandleFunc("/timeline", timelineHandler.GetTimeline)
+	followHandler := handlers.NewFollowHandler(
+		followService,
+	)
 
-	log.Println("🚀 Server running on :8080")
+	tweetHandler := handlers.NewTweetHandler(
+		tweetService,
+	)
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf(
-			"Could not start server: %v",
-			err,
-		)
-	}
+	timelineHandler := handlers.NewTimelineHandler(
+		timelineService,
+	)
+
+	http.HandleFunc(
+		"/users",
+		userHandler.CreateUser,
+	)
+
+	http.HandleFunc(
+		"/follow",
+		followHandler.FollowUser,
+	)
+
+	http.HandleFunc(
+		"/following",
+		followHandler.GetFollowing,
+	)
+
+	http.HandleFunc(
+		"/tweets",
+		tweetHandler.Tweets,
+	)
+
+	http.HandleFunc(
+		"/timeline",
+		timelineHandler.GetTimeline,
+	)
+
+	log.Println("🚀 server running :8080")
+
+	log.Fatal(
+		http.ListenAndServe(":8080", nil),
+	)
+
 }

@@ -10,36 +10,19 @@ type TimelineRepository struct {
 }
 
 func NewTimelineRepository(db *sql.DB) *TimelineRepository {
-	return &TimelineRepository{
-		DB: db,
-	}
+	return &TimelineRepository{DB: db}
 }
 
-func (r *TimelineRepository) GetTimeline(
-	userID int,
-	limit int,
-) ([]models.TimelineTweet, error) {
-
-	query := `
-		SELECT
-			tweets.id,
-			users.username,
-			tweets.content,
-			tweets.created_at
-		FROM tweets
-		INNER JOIN users
-			ON tweets.user_id = users.id
-		WHERE tweets.user_id IN (
-			SELECT followee_id
-			FROM follows
-			WHERE follower_id = $1
-		)
-		ORDER BY tweets.created_at DESC
-		LIMIT $2
-	`
-
+func (r *TimelineRepository) GetTimeline(userID int, limit int) ([]models.TimelineTweet, error) {
 	rows, err := r.DB.Query(
-		query,
+		`SELECT t.id, u.username, t.content, t.created_at
+		 FROM tweets t
+		 JOIN users u ON u.id = t.user_id
+		 WHERE t.user_id IN (
+			SELECT followee_id FROM follows WHERE follower_id = $1
+		 )
+		 ORDER BY t.created_at DESC
+		 LIMIT $2`,
 		userID,
 		limit,
 	)
@@ -51,23 +34,9 @@ func (r *TimelineRepository) GetTimeline(
 	var tweets []models.TimelineTweet
 
 	for rows.Next() {
-		var tweet models.TimelineTweet
-
-		err := rows.Scan(
-			&tweet.ID,
-			&tweet.Username,
-			&tweet.Content,
-			&tweet.CreatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		tweets = append(tweets, tweet)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
+		var t models.TimelineTweet
+		_ = rows.Scan(&t.ID, &t.Username, &t.Content, &t.CreatedAt)
+		tweets = append(tweets, t)
 	}
 
 	return tweets, nil
