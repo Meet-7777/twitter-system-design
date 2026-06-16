@@ -2,21 +2,20 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/redis/go-redis/v9"
 )
-
-var Ctx = context.Background()
 
 func NewRedis() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 	})
-	_, err := rdb.Ping(Ctx).Result()
+
+	_, err := rdb.Ping(context.Background()).Result()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to Redis: %v", err))
+		log.Fatal("Redis connection failed: ", err)
 	}
-	fmt.Println("Redis connected 🚀")
+
 	return rdb
 }

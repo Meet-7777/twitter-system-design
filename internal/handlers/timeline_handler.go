@@ -1,62 +1,34 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"twitter-system-design/internal/services"
+
+	"github.com/gin-gonic/gin"
 )
 
+// handlers/timeline_handler.go
 type TimelineHandler struct {
-	services *services.TimelineService
+	service *services.TimelineService
 }
 
-func NewTimelineHandler(
-	s *services.TimelineService,
-) *TimelineHandler {
-	return &TimelineHandler{
-		services: s,
-	}
+func NewTimelineHandler(s *services.TimelineService) *TimelineHandler {
+	return &TimelineHandler{service: s}
 }
 
-func (h *TimelineHandler) GetTimeline(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-
-	userIDStr := r.URL.Query().Get("user_id")
-
-	userID, err := strconv.Atoi(userIDStr)
+func (h *TimelineHandler) GetFeed(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		http.Error(
-			w,
-			"invalid user_id",
-			http.StatusBadRequest,
-		)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
-	tweets, err := h.services.GetTimeline(
-		userID,
-		20,
-	)
+	feed, err := h.service.GetFeed(id, 50)
 	if err != nil {
-		http.Error(
-			w,
-			err.Error(),
-			http.StatusInternalServerError,
-		)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set(
-		"Content-Type",
-		"application/json",
-	)
-
-	json.NewEncoder(w).Encode(
-		map[string]any{
-			"tweets": tweets,
-		},
-	)
+	c.JSON(http.StatusOK, feed)
 }

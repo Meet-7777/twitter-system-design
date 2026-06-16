@@ -2,9 +2,9 @@ package models
 
 import "time"
 
-type Tweet struct {
+type TimelineTweet struct {
 	ID        int
-	UserID    int
+	Username  string
 	Content   string
 	CreatedAt time.Time
 }

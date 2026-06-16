@@ -1,23 +1,18 @@
 package services
 
 import (
-	"errors"
-	"strings"
 	"twitter-system-design/internal/models"
-	"twitter-system-design/internal/repositories"
+	"twitter-system-design/internal/repository"
 )
 
 type UserService struct {
-	Repo *repositories.UserRepository
+	userRepo *repository.UserRepository
 }
 
-func NewUserService(repo *repositories.UserRepository) *UserService {
-	return &UserService{Repo: repo}
+func NewUserService(userRepo *repository.UserRepository) *UserService {
+	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) CreateUser(user *models.User) error {
-	if strings.TrimSpace(user.Username) == "" {
-		return errors.New("username is required")
-	}
-	return s.Repo.CreateUser(user)
+func (s *UserService) CreateUser(username string) (*models.User, error) {
+	return s.userRepo.Create(username)
 }
