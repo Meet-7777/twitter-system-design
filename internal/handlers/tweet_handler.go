@@ -19,7 +19,6 @@ func NewTweetHandler(s *services.TweetService) *TweetHandler {
 
 func (h *TweetHandler) CreateTweet(c *gin.Context) {
 	var body struct {
-		UserID  int    `json:"user_id"`
 		Content string `json:"content"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -27,7 +26,9 @@ func (h *TweetHandler) CreateTweet(c *gin.Context) {
 		return
 	}
 
-	tweet, err := h.service.CreateTweet(body.UserID, body.Content)
+	userID := c.GetInt("userID")
+
+	tweet, err := h.service.CreateTweet(userID, body.Content)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

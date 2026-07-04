@@ -4,8 +4,10 @@ import (
 	"twitter-system-design/internal/database"
 	"twitter-system-design/internal/handlers"
 	"twitter-system-design/internal/kafka"
+	"twitter-system-design/internal/middleware"
 	"twitter-system-design/internal/repository"
 	"twitter-system-design/internal/services"
+	"twitter-system-design/internal/token"
 	"twitter-system-design/internal/worker"
 
 	"github.com/gin-gonic/gin"
@@ -24,23 +26,36 @@ func main() {
 	followRepo := repository.NewFollowRepository(db)
 	userRepo := repository.NewUserRepository(db)
 
+	tokenStore := token.NewTokenStore(rdb)
+
 	tweetService := services.NewTweetService(tweetRepo, followRepo, userRepo, rdb, producer)
 	timelineService := services.NewTimelineService(tweetRepo, followRepo, rdb)
-	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
+	authService := services.NewAuthService(userRepo, tokenStore)
 
 	tweetHandler := handlers.NewTweetHandler(tweetService)
 	timelineHandler := handlers.NewTimelineHandler(timelineService)
-	userHandler := handlers.NewUserHandler(userService)
 	followHandler := handlers.NewFollowHandler(followService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	fanoutWorker := worker.NewFanoutWorker(rdb, consumer)
 	go fanoutWorker.Start()
 
 	r := gin.Default()
-	r.POST("/tweet", tweetHandler.CreateTweet)
-	r.GET("/feed/:id", timelineHandler.GetFeed)
-	r.POST("/user", userHandler.CreateUser)
-	r.POST("/follow", followHandler.FollowUser)
+
+	r.POST("/signup", authHandler.Signup)
+	r.GET("/verify", authHandler.VerifyEmail)
+	r.POST("/login", authHandler.Login)
+	r.POST("/refresh", authHandler.Refresh)
+	r.POST("/logout", authHandler.Logout)
+
+	protected := r.Group("/")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.POST("/tweet", tweetHandler.CreateTweet)
+		protected.GET("/feed/:id", timelineHandler.GetFeed)
+		protected.POST("/follow", followHandler.FollowUser)
+	}
+
 	r.Run(":8080")
 }
